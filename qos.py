@@ -1,48 +1,45 @@
 from dataclasses import dataclass
 
-
-# =====================================================
-# REQUISITI DI COMUNICAZIONE
-# =====================================================
-
 @dataclass
 class QoSProfile:
 
-    bandwidth: str
-    # invece di "low / medium / tolerant"
-    max_latency: str  # es: "10ms", "100ms", "1.28s"
-    reliability: str
-    power_consumption: str
+    name: str
+    min_bandwidth_mbps: float
+    max_latency_ms: float
+    reliability_level: int
+    power_profile: str
 
 
-# =====================================================
-# PROFILI QOS STANDARD
-# =====================================================
+# -- QoS standard profiles
 
 MONITORING_QOS = QoSProfile(
-    bandwidth="low",
-    max_latency="200ms",
-    reliability="very_high",
-    power_consumption="very_low"
+    name="monitoring",
+    min_bandwidth_mbps=0.1,
+    max_latency_ms=500,
+    reliability_level=3,
+    power_profile="very_low"
 )
 
 CONTROL_QOS = QoSProfile(
-    bandwidth="medium",
-    max_latency="10ms",
-    reliability="high",
-    power_consumption="medium"
+    name="control",
+    min_bandwidth_mbps=10,
+    max_latency_ms=50,
+    reliability_level=3,
+    power_profile="medium"
 )
 
 M2M_QOS = QoSProfile(
-    bandwidth="low",
-    max_latency="100ms",
-    reliability="high",
-    power_consumption="low"
+    name="m2m",
+    min_bandwidth_mbps=1,
+    max_latency_ms=200,
+    reliability_level=2,
+    power_profile="low"
 )
 
 BACKBONE_QOS = QoSProfile(
-    bandwidth="very_high",
-    max_latency="1.28s",
-    reliability="very_high",
-    power_consumption="medium"
+    name="backbone",
+    min_bandwidth_mbps=100,
+    max_latency_ms=1280,
+    reliability_level=3,
+    power_profile="medium"
 )
