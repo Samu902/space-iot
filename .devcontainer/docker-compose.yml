@@ -1,0 +1,10 @@
+services:
+  mininet:
+    build: .
+    container_name: mininet
+    privileged: true
+    tty: true
+    stdin_open: true
+    network_mode: host
+    volumes:
+      - ..:/space-iot
