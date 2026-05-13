@@ -2,7 +2,7 @@
   "name": "mininet-dev-container",
   "dockerComposeFile": "./docker-compose.yml",
   "service": "mininet",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/space-iot",
 
   "shutdownAction": "stopCompose",
 
