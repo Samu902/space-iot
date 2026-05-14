@@ -1,0 +1,16 @@
+services:
+
+  network:
+    build: ./network
+    container_name: network
+    privileged: true
+    network_mode: host
+    volumes:
+      - .:/app
+
+  controller:
+    build: ./controller
+    container_name: controller
+    network_mode: host
+    volumes:
+      - .:/app
