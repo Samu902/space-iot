@@ -1,27 +1,18 @@
-FROM ubuntu:22.04
-
-ENV DEBIAN_FRONTEND=noninteractive
+FROM python:3.8-slim
 
 RUN apt-get update && apt-get install -y \
     mininet \
     openvswitch-switch \
     openvswitch-testcontroller \
-    # iproute2 \
-    # iputils-ping \
-    # net-tools \
-    # tcpdump \
-    # vim \
-    # curl \
-    python3-dev \
-    python3-pip \
+    graphviz \
     git \
     sudo \
-    && apt-get clean
+ && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install \
+RUN pip install \
+    eventlet==0.30.2 \
     ryu==4.34 \
-    eventlet==0.33.3 \
-    dnspython==2.2.1 \
-    "setuptools<81"
+    mininet \
+    graphviz
 
 CMD ["/bin/bash"]
