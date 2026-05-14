@@ -1,4 +1,4 @@
-from topology import build_network
+from network.topology import build_network
 from cli import start_cli
 
 def main():
