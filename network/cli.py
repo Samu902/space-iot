@@ -1,7 +1,7 @@
 from mininet.cli import CLI
 
-from events import mesh_down, gateway_down
-from status import status
+from network.events import mesh_down, gateway_down
+from network.status import status
 
 
 class CustomCLI(CLI):

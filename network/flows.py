@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from qos import (
+from network.qos import (
     MONITORING_QOS,
     CONTROL_QOS,
     M2M_QOS,

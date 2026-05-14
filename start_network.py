@@ -1,5 +1,5 @@
 from network.topology import build_network
-from cli import start_cli
+from network.cli import start_cli
 
 def main():
     net = build_network()
