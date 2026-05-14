@@ -1,7 +1,7 @@
 from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.link import TCLink
-from linktechs import LINK_TECHS
+from network.linktechs import LINK_TECHS
 
 # -- Link creation function
 

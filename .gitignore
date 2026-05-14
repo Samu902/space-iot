@@ -1,4 +1,6 @@
+# python auto-generated
 __pycache__/
+*.pyc
 
 .vscode/
 
