@@ -7,6 +7,7 @@ def install_flow(switch, src, dst, out_port, priority=10):
     parser = switch.ofproto_parser
     ofp = switch.ofproto
 
+    # match: src and dst mac
     match = parser.OFPMatch(
         eth_src=src,
         eth_dst=dst
@@ -35,26 +36,47 @@ def install_flow(switch, src, dst, out_port, priority=10):
     switch.send_msg(mod)
 
 
+def delete_flows(switch, src, dst):
+
+    parser = switch.ofproto_parser
+    ofp = switch.ofproto
+
+    match = parser.OFPMatch(
+        eth_src=src,
+        eth_dst=dst
+    )
+
+    # delete every flow in the switch with this src and dst
+    mod = parser.OFPFlowMod(
+        datapath=switch,
+        command=ofp.OFPFC_DELETE,
+        out_port=ofp.OFPP_ANY,
+        out_group=ofp.OFPG_ANY,
+        match=match
+    )
+
+    switch.send_msg(mod)
+
+
 def install_path(cont: SpaceIoTController, src, dst, path):
 
     # save path to controller state
     cont.paths[(src, dst)] = path
 
+    # loop over every switch in the path
     for i in range(len(path) - 1):
 
         # get current link data
         node = path[i]
         next_node = path[i + 1]
-        link_data = cont.switch_link_graph.get_edge_data(node, next_node)
 
-        if not link_data:
-            continue
+        link = cont.switch_link_graph[node][next_node]
+        out_port = link["src_port"]
 
-        #out_port = hash((node, next_node)) % 5 + 1
-        #out_port = links[(node, next_node)][0]
-        out_port = link_data.get("src_port")
+        switch = cont.switches[node]
 
-        current_switch = cont.switches[node]
+        # clean old flows related to src and dst (if present)
+        delete_flows(switch, src, dst)
 
-        # install flow for every switch in the path
-        install_flow(current_switch, src, dst, out_port)
+        # install new flow in the switch
+        install_flow(switch, src, dst, out_port)
