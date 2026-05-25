@@ -5,7 +5,7 @@ if __name__ == "__main__":
     sys.argv = [
         "ryu-manager",
         "--verbose",
-        "controller.ryu_controller"
+        "controller.app"
     ]
 
     manager.main()
