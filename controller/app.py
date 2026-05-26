@@ -42,38 +42,54 @@ class SpaceIoTController(app_manager.RyuApp):
         ofp = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        lldp_chassis_id = lldp.ChassisID(
-            subtype=lldp.ChassisID.SUB_LOCALLY_ASSIGNED,
-            chassis_id=str(datapath.id).encode()
-        )
+        for port_no in datapath.ports:
 
-        pkt = packet.Packet()
+            # skip reserved ports
+            if port_no > ofp.OFPP_MAX:
+                continue
 
-        pkt.add_protocol(ethernet.ethernet(
-            ethertype=0x88cc,
-            dst="ff:ff:ff:ff:ff:ff",
-            src="00:00:00:00:00:01"
-        ))
+            pkt = packet.Packet()
 
-        pkt.add_protocol(lldp.lldp(
-            tlv_list=[lldp_chassis_id]
-        ))
+            pkt.add_protocol(ethernet.ethernet(
+                ethertype=0x88cc,
+                dst="ff:ff:ff:ff:ff:ff",
+                src="00:00:00:00:00:01"
+            ))
 
-        pkt.serialize()
+            chassis_id = lldp.ChassisID(
+                subtype=lldp.ChassisID.SUB_LOCALLY_ASSIGNED,
+                chassis_id=str(datapath.id).encode()
+            )
 
-        data = pkt.data
+            port_id = lldp.PortID(
+                subtype=lldp.PortID.SUB_PORT_COMPONENT,
+                port_id=str(port_no).encode()
+            )
 
-        actions = [parser.OFPActionOutput(ofp.OFPP_FLOOD)]
+            ttl = lldp.TTL(ttl=10)
 
-        out = parser.OFPPacketOut(
-            datapath=datapath,
-            buffer_id=ofp.OFP_NO_BUFFER,
-            in_port=ofp.OFPP_CONTROLLER,
-            actions=actions,
-            data=data
-        )
+            pkt.add_protocol(lldp.lldp(
+                tlv_list=[
+                    chassis_id,
+                    port_id,
+                    ttl,
+                    lldp.End()
+                ]
+            ))
 
-        datapath.send_msg(out)
+            pkt.serialize()
+
+            actions = [parser.OFPActionOutput(port_no)]
+
+            out = parser.OFPPacketOut(
+                datapath=datapath,
+                buffer_id=ofp.OFP_NO_BUFFER,
+                in_port=ofp.OFPP_CONTROLLER,
+                actions=actions,
+                data=pkt.data
+            )
+
+            datapath.send_msg(out)
 
 
     def _handle_lldp_receive(self, pkt, dst_switch):
