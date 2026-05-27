@@ -4,6 +4,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from controller.app import SpaceIoTController
 
+import networkx as nx
+import matplotlib.pyplot as plt
+import os
+
 
 def learn_host_link(cont: SpaceIoTController, host_mac, switch, switch_port):
 
@@ -29,3 +33,143 @@ def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port
 
 def get_switch_by_host(cont: SpaceIoTController, mac):
     return cont.switches[cont.host_links.get(mac, (None, None))[0]]
+
+
+def print_topology(cont: SpaceIoTController):
+
+    print("\n========== TOPOLOGY ==========")
+
+    # -----------------------------
+    # SWITCH LINKS
+    # -----------------------------
+
+    for src, dst, data in cont.switch_link_graph.edges(data=True):
+
+        src_port = data.get("src_port")
+
+        print(f"s{src}:{src_port} --> s{dst}")
+
+    # -----------------------------
+    # HOST LINKS
+    # -----------------------------
+
+    print("\nHOST ATTACHMENTS:")
+
+    for host, (switch_id, switch_port) in cont.host_links.items():
+
+        print(f"{host} --> s{switch_id}:{switch_port}")
+
+    print("================================\n")
+
+
+def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
+
+    g = nx.DiGraph()
+
+    # =================================================
+    # SWITCH LINKS
+    # =================================================
+
+    for src, dst, data in cont.switch_link_graph.edges(data=True):
+        g.add_edge(src, dst, label=data.get("src_port"))
+
+    # =================================================
+    # HOST LINKS
+    # =================================================
+
+    for host, (sw, port) in cont.host_links.items():
+        g.add_edge(host, sw, label=port)
+
+    # =================================================
+    # POSIZIONAMENTO
+    # =================================================
+
+    pos = nx.spring_layout(g, seed=42)
+
+    plt.figure(figsize=(12, 8))
+
+    # =================================================
+    # NODES COLORING
+    # =================================================
+
+    node_colors = []
+    for n in g.nodes():
+        if n in cont.switches:
+            node_colors.append("lightblue")   # switches
+        else:
+            node_colors.append("lightgreen")  # hosts
+
+    nx.draw_networkx_nodes(
+        g,
+        pos,
+        node_color=node_colors,
+        node_size=2500
+    )
+
+    # =================================================
+    # EDGES (DIFFERENZIAZIONE DIREZIONE)
+    # =================================================
+
+    # detect bidirectional edges
+    bidir = set()
+
+    for u, v in g.edges():
+        if g.has_edge(v, u):
+            bidir.add((u, v))
+            bidir.add((v, u))
+
+    # draw edges
+    for u, v in g.edges():
+        if (u, v) in bidir:
+            style = "solid"
+            color = "black"
+            width = 2
+        else:
+            style = "dashed"
+            color = "red"
+            width = 1.5
+
+        nx.draw_networkx_edges(
+            g,
+            pos,
+            edgelist=[(u, v)],
+            edge_color=color,
+            style=style,
+            width=width,
+            arrows=True
+        )
+
+    # =================================================
+    # LABELS NODI
+    # =================================================
+
+    nx.draw_networkx_labels(g, pos, font_size=10)
+
+    # =================================================
+    # EDGE LABELS (porte)
+    # =================================================
+
+    edge_labels = nx.get_edge_attributes(g, "label")
+
+    nx.draw_networkx_edge_labels(
+        g,
+        pos,
+        edge_labels=edge_labels,
+        font_size=9,
+        label_pos=0.6
+    )
+
+    # =================================================
+    # SALVATAGGIO IN WORKSPACE
+    # =================================================
+
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    plt.title("SpaceIoT Topology")
+    plt.axis("off")
+    plt.tight_layout()
+
+    plt.savefig(out_path, dpi=200)
+    plt.close()
+
+    print(f"[TOPOLOGY] saved to {out_path}")

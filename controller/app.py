@@ -5,7 +5,7 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib import hub
 from ryu.lib.packet import packet, ethernet, lldp
 
-from controller.topology import learn_host_link, learn_switch_link
+from controller.topology import learn_host_link, learn_switch_link, print_topology, draw_topology
 from controller.routing import compute_path
 from controller.flow import install_path
 
@@ -69,7 +69,7 @@ class SpaceIoTController(app_manager.RyuApp):
             ttl = lldp.TTL(ttl=10)
 
             pkt.add_protocol(lldp.lldp(
-                tlv_list=[
+                tlvs=[
                     chassis_id,
                     port_id,
                     ttl,
@@ -96,8 +96,8 @@ class SpaceIoTController(app_manager.RyuApp):
 
         lldp_pkt = pkt.get_protocol(lldp.lldp)
 
-        src_port = None
         src_dpid = None
+        src_port = None
 
         for tlv in lldp_pkt.tlvs:
 
@@ -105,9 +105,15 @@ class SpaceIoTController(app_manager.RyuApp):
                 src_dpid = int(tlv.chassis_id.decode())
 
             if isinstance(tlv, lldp.PortID):
-                src_port = int(tlv.port_id.decode()) if isinstance(tlv.port_id, bytes) else int(tlv.port_id)
+                src_port = int(tlv.port_id.decode())
 
-        learn_switch_link(self, src_dpid, dst_switch.id, src_port)
+        print("LLDP:", src_dpid, "->", dst_switch.id, "port", src_port)
+        
+        learn_switch_link(self, self.switches[src_dpid], dst_switch, src_port)
+
+        print_topology(self)
+
+        draw_topology(self)
 
         for (src, dst) in list(self.paths.keys()):
             path = compute_path(self, src, dst)
@@ -161,11 +167,13 @@ class SpaceIoTController(app_manager.RyuApp):
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
 
+        print("PACKETIN:", eth.ethertype, dp.id, in_port)
+
         if eth is None:
             return
 
         if eth.ethertype == 0x88cc:
-            self._handle_lldp_receive(pkt, dp, in_port)
+            self._handle_lldp_receive(pkt, dp)
             return
 
         src = eth.src
