@@ -39,16 +39,10 @@ PHYSICAL_LINKS = [
     ("rover2", "s_rover", "zigbee"),
 
     # =================================================
-    # GATEWAY SEGMENT
-    # =================================================
-
-    ("gw", "s_gw", "wifi"),
-
-    # =================================================
     # EARTH BACKBONE
     # =================================================
 
-    ("earth", "s_earth", "fso"),
+    ("earth", "s_gw", "fso"),
 
     # =================================================
     # INTER-SWITCH NETWORK
@@ -59,8 +53,6 @@ PHYSICAL_LINKS = [
     ("s_rover", "s_gw", "lora"),
 
     ("s_env", "s_gw", "wifi"),
-
-    ("s_gw", "s_earth", "fso"),
 ]
 
 
@@ -99,7 +91,6 @@ def build_network():
         "env2",
         "rover1",
         "rover2",
-        "gw",
         "earth"
     ]:
         hosts[host_name] = net.addHost(host_name)
@@ -112,7 +103,6 @@ def build_network():
         "s_env": "000000000001",
         "s_rover": "000000000002",
         "s_gw": "000000000003",
-        "s_earth": "000000000004",
     }
 
     switches = {}
@@ -121,7 +111,6 @@ def build_network():
         "s_env",
         "s_rover",
         "s_gw",
-        "s_earth"
     ]:
         switches[switch_name] = net.addSwitch(
             switch_name,
