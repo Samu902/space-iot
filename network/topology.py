@@ -71,8 +71,10 @@ PHYSICAL_LINKS = [
 def build_network():
 
     net = Mininet(
-        controller=RemoteController,
-        link=TCLink
+        controller=None,
+        link=TCLink,
+        autoSetMacs=True,
+        autoStaticArp=True
     )
 
     # =================================================
@@ -124,7 +126,8 @@ def build_network():
         switches[switch_name] = net.addSwitch(
             switch_name,
             dpid=SWITCH_DPID[switch_name],
-            protocols="OpenFlow13"
+            protocols="OpenFlow13",
+            failMode="standalone"
         )
 
     # =================================================
