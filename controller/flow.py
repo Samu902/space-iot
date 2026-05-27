@@ -1,4 +1,8 @@
-from controller.app import SpaceIoTController
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controller.app import SpaceIoTController
 
 
 def install_flow(switch, src, dst, out_port, priority=10):
@@ -80,3 +84,13 @@ def install_path(cont: SpaceIoTController, src, dst, path):
 
         # install new flow in the switch
         install_flow(switch, src, dst, out_port)
+
+    # last hop to dst host
+
+    dst_switch_id, dst_host_port = cont.host_links[dst]
+
+    dst_switch = cont.switches[dst_switch_id]
+
+    delete_flows(dst_switch, src, dst)
+
+    install_flow(dst_switch, src, dst, dst_host_port)
