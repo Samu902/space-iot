@@ -1,6 +1,10 @@
-from controller.app import SpaceIoTController
-import networkx as nx
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from controller.app import SpaceIoTController
+
+import networkx as nx
 
 def compute_path(cont: SpaceIoTController, src_mac, dst_mac):
 

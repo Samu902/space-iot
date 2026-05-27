@@ -1,4 +1,8 @@
-from controller.app import SpaceIoTController
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controller.app import SpaceIoTController
 
 
 def learn_host_link(cont: SpaceIoTController, host_mac, switch, switch_port):
