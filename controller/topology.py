@@ -37,11 +37,7 @@ def get_switch_by_host(cont: SpaceIoTController, mac):
 
 def print_topology(cont: SpaceIoTController):
 
-    print("\n========== TOPOLOGY ==========")
-
-    # -----------------------------
-    # SWITCH LINKS
-    # -----------------------------
+    print("\n========== SWITCH LINKS ==========")
 
     for src, dst, data in cont.switch_link_graph.edges(data=True):
 
@@ -49,11 +45,7 @@ def print_topology(cont: SpaceIoTController):
 
         print(f"s{src}:{src_port} --> s{dst}")
 
-    # -----------------------------
-    # HOST LINKS
-    # -----------------------------
-
-    print("\nHOST ATTACHMENTS:")
+    print("\n============ HOST LINKS ===============")
 
     for host, (switch_id, switch_port) in cont.host_links.items():
 
@@ -66,31 +58,21 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
 
     g = nx.DiGraph()
 
-    # =================================================
-    # SWITCH LINKS
-    # =================================================
+    # add switch and host links to the graph
 
     for src, dst, data in cont.switch_link_graph.edges(data=True):
         g.add_edge(src, dst, label=data.get("src_port"))
 
-    # =================================================
-    # HOST LINKS
-    # =================================================
+    for host, (sw, sw_port) in cont.host_links.items():
+        g.add_edge(host, sw, label=sw_port)
 
-    for host, (sw, port) in cont.host_links.items():
-        g.add_edge(host, sw, label=port)
-
-    # =================================================
-    # POSIZIONAMENTO
-    # =================================================
+    # figure setup
 
     pos = nx.spring_layout(g, seed=42)
 
     plt.figure(figsize=(12, 8))
 
-    # =================================================
-    # NODES COLORING
-    # =================================================
+    # graph nodes coloring and drawing (based on device type)
 
     node_colors = []
     for n in g.nodes():
@@ -106,11 +88,8 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
         node_size=2500
     )
 
-    # =================================================
-    # EDGES (DIFFERENZIAZIONE DIREZIONE)
-    # =================================================
+    # graph edges coloring and drawing (based on bidirectionality)
 
-    # detect bidirectional edges
     bidir = set()
 
     for u, v in g.edges():
@@ -118,7 +97,6 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
             bidir.add((u, v))
             bidir.add((v, u))
 
-    # draw edges
     for u, v in g.edges():
         if (u, v) in bidir:
             style = "solid"
@@ -139,15 +117,11 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
             arrows=True
         )
 
-    # =================================================
-    # LABELS NODI
-    # =================================================
+    # node labels (macs and dpids)
 
     nx.draw_networkx_labels(g, pos, font_size=10)
 
-    # =================================================
-    # EDGE LABELS (porte)
-    # =================================================
+    # edge labels (ports)
 
     edge_labels = nx.get_edge_attributes(g, "label")
 
@@ -156,12 +130,10 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
         pos,
         edge_labels=edge_labels,
         font_size=9,
-        label_pos=0.6
+        label_pos=0.7
     )
 
-    # =================================================
-    # SALVATAGGIO IN WORKSPACE
-    # =================================================
+    # save figure to image
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
