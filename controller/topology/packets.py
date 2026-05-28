@@ -62,7 +62,7 @@ def send_lldp(src_switch):
         src_switch.send_msg(out)
 
 
-def receive_lldp(cont: SpaceIoTController, dst_switch, pkt):
+def receive_lldp(pkt) -> tuple[int, int]:
 
     lldp_pkt = pkt.get_protocol(lldp.lldp)
 
@@ -77,15 +77,4 @@ def receive_lldp(cont: SpaceIoTController, dst_switch, pkt):
         if isinstance(tlv, lldp.PortID):
             src_port = int(tlv.port_id.decode())
 
-    print(f"Ricevuto LLDP: s{src_dpid}:{src_port} -> s{dst_switch.id}")
-    
-    learn_switch_link(cont, cont.switches[src_dpid], dst_switch, src_port)
-
-    #print_topology(cont)
-
-    #draw_topology(cont)
-
-    for (src, dst) in list(cont.paths.keys()):
-        path = compute_path(cont, src, dst)
-        if path:
-            install_path(cont, src, dst, path)
+    return src_dpid, src_port

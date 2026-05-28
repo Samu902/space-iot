@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 
 
 def learn_switch(cont: SpaceIoTController, switch):
+    
     cont.switch_link_graph.add_node(switch.id)
     cont.switches[switch.id] = switch
 

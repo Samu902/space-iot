@@ -3,9 +3,11 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import MAIN_DISPATCHER, CONFIG_DISPATCHER, set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib import hub
-from ryu.lib.packet import packet, ethernet, lldp
+from ryu.lib.packet import packet, ethernet
 
-from controller.topology import learn_host_link, learn_switch_link, print_topology, draw_topology
+from controller.topology.learning import learn_switch, learn_host_link, learn_switch_link
+from controller.topology.status import print_topology, draw_topology
+from controller.topology.packets import send_lldp, receive_lldp
 from controller.routing import compute_path
 from controller.flow import install_path
 
@@ -26,99 +28,16 @@ class SpaceIoTController(app_manager.RyuApp):
         self.host_links = {}                         # host_mac -> (switch_id, switch_port, link_metadata)
         self.paths = {}                              # (src_host_mac, dst_host_mac) -> path (list di switch_id)
 
-        # start lldp loop (topology discovery refresh)
-        self.lldp_thread = hub.spawn(self._lldp_loop)
+        self.refresh_topology_period = 2 * 60        # every 2 minutes
 
+        # define lldp send loop (topology discovery refresh) as local function, then start it as a thread
+        def lldp_send_loop():
+            while True:
+                for id, switch in self.switches.items():
+                    send_lldp(switch)
+                hub.sleep(self.refresh_topology_period)
 
-    def _lldp_loop(self):
-        while True:
-            for dpid, datapath in self.switches.items():
-                self._send_lldp(datapath)
-            hub.sleep(2)
-
-
-    def _send_lldp(self, datapath):
-
-        ofp = datapath.ofproto
-        parser = datapath.ofproto_parser
-
-        for port_no in datapath.ports:
-
-            # skip reserved ports
-            if port_no > ofp.OFPP_MAX:
-                continue
-
-            pkt = packet.Packet()
-
-            pkt.add_protocol(ethernet.ethernet(
-                ethertype=0x88cc,
-                dst="ff:ff:ff:ff:ff:ff",
-                src="00:00:00:00:00:01"
-            ))
-
-            chassis_id = lldp.ChassisID(
-                subtype=lldp.ChassisID.SUB_LOCALLY_ASSIGNED,
-                chassis_id=str(datapath.id).encode()
-            )
-
-            port_id = lldp.PortID(
-                subtype=lldp.PortID.SUB_PORT_COMPONENT,
-                port_id=str(port_no).encode()
-            )
-
-            ttl = lldp.TTL(ttl=10)
-
-            pkt.add_protocol(lldp.lldp(
-                tlvs=[
-                    chassis_id,
-                    port_id,
-                    ttl,
-                    lldp.End()
-                ]
-            ))
-
-            pkt.serialize()
-
-            actions = [parser.OFPActionOutput(port_no)]
-
-            out = parser.OFPPacketOut(
-                datapath=datapath,
-                buffer_id=ofp.OFP_NO_BUFFER,
-                in_port=ofp.OFPP_CONTROLLER,
-                actions=actions,
-                data=pkt.data
-            )
-
-            datapath.send_msg(out)
-
-
-    def _handle_lldp_receive(self, pkt, dst_switch):
-
-        lldp_pkt = pkt.get_protocol(lldp.lldp)
-
-        src_dpid = None
-        src_port = None
-
-        for tlv in lldp_pkt.tlvs:
-
-            if isinstance(tlv, lldp.ChassisID):
-                src_dpid = int(tlv.chassis_id.decode())
-
-            if isinstance(tlv, lldp.PortID):
-                src_port = int(tlv.port_id.decode())
-
-        print("LLDP:", src_dpid, "->", dst_switch.id, "port", src_port)
-        
-        learn_switch_link(self, self.switches[src_dpid], dst_switch, src_port)
-
-        print_topology(self)
-
-        draw_topology(self)
-
-        for (src, dst) in list(self.paths.keys()):
-            path = compute_path(self, src, dst)
-            if path:
-                install_path(self, src, dst, path)
+        self.lldp_thread = hub.spawn(lldp_send_loop)
 
 
     # -----------------------------
@@ -132,7 +51,7 @@ class SpaceIoTController(app_manager.RyuApp):
         parser = dp.ofproto_parser
 
         # register datapath
-        self.switches[dp.id] = dp
+        learn_switch(self, dp)
 
         # match: all packets
         match = parser.OFPMatch()
@@ -172,12 +91,30 @@ class SpaceIoTController(app_manager.RyuApp):
         if eth is None:
             return
 
+        # LLDP packets for topology discovery
         if eth.ethertype == 0x88cc:
-            self._handle_lldp_receive(pkt, dp)
+            src_dpid, src_port = receive_lldp(pkt)
+
+            print(f"Ricevuto LLDP: s{src_dpid}:{src_port} -> s{dp.id}")
+
+            learn_switch_link(self, self.switches[src_dpid], dp, src_port)
+
+            print_topology(self)
+            draw_topology(self)
+
+            for (src, dst) in list(self.paths.keys()):
+                path = compute_path(self, src, dst)
+                if path:
+                    install_path(self, src, dst, path)
+
             return
 
         src = eth.src
         dst = eth.dst
+
+        # ignore non mininet host packets
+        if not src.startswith("00:00:00:00:00:"):
+            return
 
         # learn topology
         learn_host_link(self, src, dp, in_port)
