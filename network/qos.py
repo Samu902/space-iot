@@ -1,45 +1,49 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class QoSProfile:
 
     name: str
-    min_bandwidth_mbps: float
-    max_latency_ms: float
-    reliability_level: int
-    power_profile: str
-
+    min_bw_mbps: float
+    max_delay_ms: float
+    max_loss_percent: float
+    max_energy_consumption: int     # 1-5: very low, low, medium, high, very high
 
 # -- QoS standard profiles
 
-MONITORING_QOS = QoSProfile(
-    name="monitoring",
-    min_bandwidth_mbps=0.1,
-    max_latency_ms=500,
-    reliability_level=3,
-    power_profile="very_low"
-)
+QOS_PROFILES = {
 
-CONTROL_QOS = QoSProfile(
-    name="control",
-    min_bandwidth_mbps=10,
-    max_latency_ms=50,
-    reliability_level=3,
-    power_profile="medium"
-)
+    "monitoring": QoSProfile(
+        name="monitoring",
+        min_bw_mbps=0.1,
+        max_delay_ms=500,
+        max_loss_percent=3,
+        max_energy_consumption=1
+    ),
 
-M2M_QOS = QoSProfile(
-    name="m2m",
-    min_bandwidth_mbps=1,
-    max_latency_ms=200,
-    reliability_level=2,
-    power_profile="low"
-)
+    "control": QoSProfile(
+        name="control",
+        min_bw_mbps=10,
+        max_delay_ms=50,
+        max_loss_percent=3,
+        max_energy_consumption=3
+    ),
 
-BACKBONE_QOS = QoSProfile(
-    name="backbone",
-    min_bandwidth_mbps=100,
-    max_latency_ms=1280,
-    reliability_level=3,
-    power_profile="medium"
-)
+    "m2m": QoSProfile(
+        name="m2m",
+        min_bw_mbps=1,
+        max_delay_ms=200,
+        max_loss_percent=2,
+        max_energy_consumption=2
+    ),
+
+    "backbone": QoSProfile(
+        name="backbone",
+        min_bw_mbps=100,
+        max_delay_ms=1280,
+        max_loss_percent=3,
+        max_energy_consumption=3
+    )
+
+}
