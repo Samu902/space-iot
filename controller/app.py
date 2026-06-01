@@ -97,8 +97,7 @@ class SpaceIoTController(app_manager.RyuApp):
 
             print(f"Ricevuto LLDP: s{src_dpid}:{src_port} -> s{dp.id}")
 
-            learn_switch_link(self, self.switches[src_dpid], dp, src_port)
-
+            learn_switch_link(self, self.switches[src_dpid], dp, src_port, bw, delay, loss)
             print_topology(self)
             draw_topology(self)
 

@@ -6,6 +6,25 @@ if TYPE_CHECKING:
 
 import networkx as nx
 
+
+def link_cost(u, v, data):
+
+    # read link metadata
+    delay = data.get("delay", 1)
+    loss = data.get("loss", 0)
+    bw = data.get("bw", 1)
+
+    # avoid division errors
+    bw = max(bw, 0.01)
+
+    # normalized cost function
+    return (
+        delay * 1.0 +
+        loss * 10.0 +
+        (1.0 / bw) * 5.0
+    )
+
+
 def compute_path(cont: SpaceIoTController, src_mac, dst_mac):
 
     if src_mac not in cont.host_links or dst_mac not in cont.host_links:
@@ -19,7 +38,7 @@ def compute_path(cont: SpaceIoTController, src_mac, dst_mac):
             cont.switch_link_graph,
             source=src_switch_id,
             target=dst_switch_id,
-            weight="cost"
+            weight=link_cost
         )
     except nx.NetworkXNoPath:
         return None

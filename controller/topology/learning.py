@@ -17,7 +17,7 @@ def learn_host_link(cont: SpaceIoTController, host_mac, switch, switch_port):
     cont.host_links[host_mac] = (switch.id, switch_port)
 
 
-def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port):
+def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port, bw, delay, loss):
 
     cont.switch_link_graph.add_node(src_switch.id)
     cont.switch_link_graph.add_node(dst_switch.id)
@@ -25,5 +25,8 @@ def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port
     cont.switch_link_graph.add_edge(
         src_switch.id, 
         dst_switch.id,
-        src_port=src_port
+        src_port=src_port,
+        bw=bw,
+        delay=delay,
+        loss=loss
     )
