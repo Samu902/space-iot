@@ -21,11 +21,11 @@ def print_topology(cont: SpaceIoTController):
 
     print("\n============ HOST LINKS ===============")
 
-    for host, (switch_id, switch_port) in cont.host_links.items():
+    for host, data in cont.host_links.items():
 
-        print(f"{host} --> s{switch_id}:{switch_port}")
+        print(f"{host} --> s{data['switch_id']}:{data['switch_port']}")
 
-    print("================================\n")
+    print("\n================================\n")
 
 
 def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
@@ -37,8 +37,8 @@ def draw_topology(cont: SpaceIoTController, out_path="/space-iot/topology.png"):
     for src, dst, data in cont.switch_link_graph.edges(data=True):
         g.add_edge(src, dst, label=data.get("src_port"))
 
-    for host, (sw, sw_port) in cont.host_links.items():
-        g.add_edge(host, sw, label=sw_port)
+    for host, data in cont.host_links.items():
+        g.add_edge(host, data["switch_id"], label=data["switch_port"])
 
     # figure setup
 

@@ -5,7 +5,7 @@ from ryu.ofproto import ofproto_v1_3
 from ryu.lib import hub
 from ryu.lib.packet import packet, ethernet
 
-from controller.topology.learning import learn_switch, learn_host_link, learn_switch_link
+from controller.topology.learning import learn_switch, learn_host_link, learn_switch_link, age_topology
 from controller.topology.packets import send_lldp, receive_lldp
 from controller.routing import compute_path
 from controller.flow import install_path
@@ -27,7 +27,9 @@ class SpaceIoTController(app_manager.RyuApp):
         self.host_links = {}                         # host_mac -> (switch_id, switch_port, link_metadata)
         self.paths = {}                              # (src_host_mac, dst_host_mac) -> path (list di switch_id)
 
-        self.refresh_topology_period = 2 * 60        # every 2 minutes
+        self.refresh_topology_period = 30        # every 2 minutes
+        self.node_timeout = 1 * 60      # 5 minuti
+        self.link_timeout = 1 * 60      # 3 minuti
 
         # define lldp send loop (topology discovery refresh) as local function, then start it as a thread
         def lldp_send_loop():
@@ -37,6 +39,13 @@ class SpaceIoTController(app_manager.RyuApp):
                 hub.sleep(self.refresh_topology_period)
 
         self.lldp_thread = hub.spawn(lldp_send_loop)
+
+        def topology_aging_loop():
+            while True:
+                age_topology(self)
+                hub.sleep(10)
+
+        self.aging_thread = hub.spawn(topology_aging_loop)
 
 
     # -----------------------------
@@ -85,7 +94,7 @@ class SpaceIoTController(app_manager.RyuApp):
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
 
-        print("PACKETIN:", eth.ethertype, dp.id, in_port)
+        print(f"PACKETIN from {dp.id}:{in_port}, eth type = {eth.ethertype}")
 
         if eth is None:
             return

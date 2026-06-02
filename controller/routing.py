@@ -33,8 +33,8 @@ def compute_path(cont: SpaceIoTController, src_mac, dst_mac):
     if src_mac not in cont.host_links or dst_mac not in cont.host_links:
         return None
 
-    src_switch_id = cont.host_links[src_mac][0]
-    dst_switch_id = cont.host_links[dst_mac][0]
+    src_switch_id = cont.host_links[src_mac]["switch_id"]
+    dst_switch_id = cont.host_links[dst_mac]["switch_id"]
 
     try:
         return nx.shortest_path(
