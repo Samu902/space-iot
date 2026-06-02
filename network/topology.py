@@ -1,13 +1,13 @@
 from mininet.net import Mininet
 from mininet.node import RemoteController
 from mininet.link import TCLink
-from network.linktechs import LINK_TECHS
+from network.network_techs import NET_TECHS
 
 # -- Link creation function
 
 def add_link(net: Mininet, a, b, tech_name: str):
 
-    tech = LINK_TECHS[tech_name]
+    tech = NET_TECHS[tech_name]
 
     net.addLink(
         a,

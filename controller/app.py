@@ -6,7 +6,6 @@ from ryu.lib import hub
 from ryu.lib.packet import packet, ethernet
 
 from controller.topology.learning import learn_switch, learn_host_link, learn_switch_link
-from controller.topology.status import print_topology, draw_topology
 from controller.topology.packets import send_lldp, receive_lldp
 from controller.routing import compute_path
 from controller.flow import install_path
@@ -98,8 +97,6 @@ class SpaceIoTController(app_manager.RyuApp):
             print(f"Ricevuto LLDP: s{src_dpid}:{src_port} -> s{dp.id}")
 
             learn_switch_link(self, self.switches[src_dpid], dp, src_port, bw, delay, loss)
-            print_topology(self)
-            draw_topology(self)
 
             for (src, dst) in list(self.paths.keys()):
                 path = compute_path(self, src, dst)
@@ -116,7 +113,8 @@ class SpaceIoTController(app_manager.RyuApp):
             return
 
         # learn topology
-        learn_host_link(self, src, dp, in_port)
+        if src not in self.host_links:
+            learn_host_link(self, src, dp, in_port)
 
         # compute path between src and dst
         path = compute_path(self, src, dst)
