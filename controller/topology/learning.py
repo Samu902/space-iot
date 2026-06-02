@@ -25,7 +25,7 @@ def learn_host_link(cont: SpaceIoTController, host_mac, switch, switch_port):
     draw_topology(cont)
 
 
-def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port, bw, delay, loss):
+def learn_switch_link(cont: SpaceIoTController, src_switch, dst_switch, src_port, bw=1, delay=0, loss=0):
 
     cont.switch_link_graph.add_node(src_switch.id)
     cont.switch_link_graph.add_node(dst_switch.id)

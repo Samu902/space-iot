@@ -9,6 +9,9 @@ import networkx as nx
 
 def link_cost(u, v, data):
 
+    # static hop count, for now
+    return 1
+
     # read link metadata
     delay = data.get("delay", 1)
     loss = data.get("loss", 0)
